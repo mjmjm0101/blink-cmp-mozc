@@ -1,0 +1,156 @@
+name: Build mozc_emacs_helper
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:  # 手動実行も可能
+
+jobs:
+  # ─────────────────────────────────────────
+  # macOS: x86_64 + arm64 → ユニバーサルバイナリ
+  # ─────────────────────────────────────────
+  build-macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Bazel
+        run: brew install bazel
+
+      - name: Clone Mozc
+        run: |
+          git clone --depth 1 https://github.com/google/mozc.git
+          cd mozc/src
+
+      - name: Build mozc_emacs_helper (x86_64)
+        working-directory: mozc/src
+        run: |
+          bazel build --config=macos \
+            --cpu=darwin_x86_64 \
+            //unix/emacs:mozc_emacs_helper
+          cp bazel-bin/unix/emacs/mozc_emacs_helper \
+            ../../mozc_emacs_helper_x86_64
+
+      - name: Build mozc_emacs_helper (arm64)
+        working-directory: mozc/src
+        run: |
+          bazel build --config=macos \
+            --cpu=darwin_arm64 \
+            //unix/emacs:mozc_emacs_helper
+          cp bazel-bin/unix/emacs/mozc_emacs_helper \
+            ../../mozc_emacs_helper_arm64
+
+      - name: Create universal binary
+        run: |
+          lipo -create \
+            mozc_emacs_helper_x86_64 \
+            mozc_emacs_helper_arm64 \
+            -output mozc_emacs_helper_macos
+          lipo -info mozc_emacs_helper_macos
+
+      - name: Upload macOS binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: mozc_emacs_helper_macos
+          path: mozc_emacs_helper_macos
+
+  # ─────────────────────────────────────────
+  # Linux x86_64
+  # ─────────────────────────────────────────
+  build-linux-x86_64:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y bazel-bootstrap \
+            libibus-1.0-dev libgtk2.0-dev \
+            ninja-build
+
+      - name: Clone Mozc
+        run: git clone --depth 1 https://github.com/google/mozc.git
+
+      - name: Build mozc_emacs_helper
+        working-directory: mozc/src
+        run: |
+          bazel build --config=linux \
+            //unix/emacs:mozc_emacs_helper
+          cp bazel-bin/unix/emacs/mozc_emacs_helper \
+            ../../mozc_emacs_helper_linux_x86_64
+
+      - name: Upload Linux x86_64 binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: mozc_emacs_helper_linux_x86_64
+          path: mozc_emacs_helper_linux_x86_64
+
+  # ─────────────────────────────────────────
+  # Linux arm64
+  # ─────────────────────────────────────────
+  build-linux-arm64:
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y bazel-bootstrap \
+            libibus-1.0-dev libgtk2.0-dev \
+            ninja-build
+
+      - name: Clone Mozc
+        run: git clone --depth 1 https://github.com/google/mozc.git
+
+      - name: Build mozc_emacs_helper
+        working-directory: mozc/src
+        run: |
+          bazel build --config=linux \
+            //unix/emacs:mozc_emacs_helper
+          cp bazel-bin/unix/emacs/mozc_emacs_helper \
+            ../../mozc_emacs_helper_linux_arm64
+
+      - name: Upload Linux arm64 binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: mozc_emacs_helper_linux_arm64
+          path: mozc_emacs_helper_linux_arm64
+
+  # ─────────────────────────────────────────
+  # リリース: バイナリを bin/ に配置して commit
+  # ─────────────────────────────────────────
+  release:
+    needs: [build-macos, build-linux-x86_64, build-linux-arm64]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts/
+
+      - name: Arrange binaries
+        run: |
+          mkdir -p bin
+          cp artifacts/mozc_emacs_helper_macos/mozc_emacs_helper_macos \
+            bin/mozc_emacs_helper_macos
+          cp artifacts/mozc_emacs_helper_linux_x86_64/mozc_emacs_helper_linux_x86_64 \
+            bin/mozc_emacs_helper_linux_x86_64
+          cp artifacts/mozc_emacs_helper_linux_arm64/mozc_emacs_helper_linux_arm64 \
+            bin/mozc_emacs_helper_linux_arm64
+          chmod +x bin/*
+
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            bin/mozc_emacs_helper_macos
+            bin/mozc_emacs_helper_linux_x86_64
+            bin/mozc_emacs_helper_linux_arm64
+          generate_release_notes: true
