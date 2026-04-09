@@ -15,8 +15,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Bazel
-        run: brew install bazel
+      - name: Check Bazel
+        run: bazel --version  # bazelisk が bazel として動作している
 
       - name: Clone Mozc
         run: |
