@@ -27,7 +27,7 @@
 
 ```lua
 {
-  'mjmjm/blink-cmp-mozc',
+  'mjmjm0101/blink-cmp-mozc',
   dependencies = { 'Saghen/blink.cmp' },
   build = function()
     require('blink-cmp-mozc.install').install()

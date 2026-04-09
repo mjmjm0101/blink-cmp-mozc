@@ -8,7 +8,7 @@
 
 local M = {}
 
-local REPO = "mjmjm/blink-cmp-mozc" -- TODO: 実際のリポジトリ名に変更
+local REPO = "mjmjm0101/blink-cmp-mozc"
 
 -- OS/アーキテクチャからバイナリ名を決定
 local function get_binary_name()
