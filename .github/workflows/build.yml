@@ -8,9 +8,9 @@ on:
 
 jobs:
   # ─────────────────────────────────────────
-  # macOS arm64 (Apple Silicon / macos-latest)
+  # macOS arm64 (Apple Silicon)
   # ─────────────────────────────────────────
-  build-macos-arm64:
+  build-macos:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
@@ -18,71 +18,14 @@ jobs:
       - name: Clone Mozc
         run: git clone --depth 1 https://github.com/google/mozc.git
 
-      - name: Build mozc_emacs_helper (arm64)
+      - name: Build mozc_emacs_helper
         working-directory: mozc/src
         run: |
           bazel build --config=macos //unix/emacs:mozc_emacs_helper
           cp bazel-bin/unix/emacs/mozc_emacs_helper \
-            ../../mozc_emacs_helper_arm64
+            ../../mozc_emacs_helper_macos
 
-      - name: Upload arm64 binary
-        uses: actions/upload-artifact@v4
-        with:
-          name: mozc_emacs_helper_arm64
-          path: mozc_emacs_helper_arm64
-
-  # ─────────────────────────────────────────
-  # macOS x86_64 (Intel / macos-13)
-  # ─────────────────────────────────────────
-  build-macos-x86_64:
-    runs-on: macos-13
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Clone Mozc
-        run: git clone --depth 1 https://github.com/google/mozc.git
-
-      - name: Build mozc_emacs_helper (x86_64)
-        working-directory: mozc/src
-        run: |
-          bazel build --config=macos //unix/emacs:mozc_emacs_helper
-          cp bazel-bin/unix/emacs/mozc_emacs_helper \
-            ../../mozc_emacs_helper_x86_64
-
-      - name: Upload x86_64 binary
-        uses: actions/upload-artifact@v4
-        with:
-          name: mozc_emacs_helper_x86_64
-          path: mozc_emacs_helper_x86_64
-
-  # ─────────────────────────────────────────
-  # macOS ユニバーサルバイナリを合成
-  # ─────────────────────────────────────────
-  build-macos-universal:
-    needs: [build-macos-arm64, build-macos-x86_64]
-    runs-on: macos-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Download arm64 binary
-        uses: actions/download-artifact@v4
-        with:
-          name: mozc_emacs_helper_arm64
-
-      - name: Download x86_64 binary
-        uses: actions/download-artifact@v4
-        with:
-          name: mozc_emacs_helper_x86_64
-
-      - name: Create universal binary
-        run: |
-          lipo -create \
-            mozc_emacs_helper_x86_64 \
-            mozc_emacs_helper_arm64 \
-            -output mozc_emacs_helper_macos
-          lipo -info mozc_emacs_helper_macos
-
-      - name: Upload universal binary
+      - name: Upload macOS binary
         uses: actions/upload-artifact@v4
         with:
           name: mozc_emacs_helper_macos
@@ -154,7 +97,7 @@ jobs:
   # リリース
   # ─────────────────────────────────────────
   release:
-    needs: [build-macos-universal, build-linux-x86_64, build-linux-arm64]
+    needs: [build-macos, build-linux-x86_64, build-linux-arm64]
     runs-on: ubuntu-latest
     permissions:
       contents: write

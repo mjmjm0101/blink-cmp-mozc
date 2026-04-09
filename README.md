@@ -101,7 +101,7 @@ require('blink-cmp-mozc').setup({
 
 | OS | アーキテクチャ |
 |---|---|
-| macOS | x86_64 / arm64 (ユニバーサルバイナリ) |
+| macOS | arm64 (Apple Silicon) |
 | Linux | x86_64 |
 | Linux | arm64 |
 
