@@ -17,7 +17,7 @@ local function get_binary_name()
   local machine = uname.machine:lower()
 
   if sysname == "darwin" then
-    return "mozc_emacs_helper_macos" -- ユニバーサルバイナリ (x86_64 + arm64)
+    return "mozc_emacs_helper_macos" -- arm64 (Apple Silicon)
   elseif sysname == "linux" then
     if machine:match("aarch64") or machine:match("arm64") then
       return "mozc_emacs_helper_linux_arm64"
