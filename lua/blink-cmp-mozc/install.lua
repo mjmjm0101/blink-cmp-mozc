@@ -78,7 +78,7 @@ function M.install()
   end
 
   -- ダウンロード URL を抽出
-  local url = json:match('"browser_download_url":"([^"]+' .. binary_name .. '[^"]*)"')
+  local url = json:match('"browser_download_url"%s*:%s*"([^"]+' .. binary_name .. '[^"]*)"')
   if not url then
     vim.notify(
       "blink-cmp-mozc: " .. binary_name .. " のダウンロード URL が見つかりません",
